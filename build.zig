@@ -38,8 +38,8 @@ pub fn run_archiver() !void {
     const release_path = std.os.getenv("__BURRITO_RELEASE_PATH");
     try foilz.pack_directory(release_path.?, "./payload.foilz");
 
-    // const compress_cmd = builder.addSystemCommand(&[_][]const u8{ "/bin/bash", "-c", "gzip -9nf payload.foilz" });
-    const compress_cmd = builder.addSystemCommand(&[_][]const u8{ "/bin/bash", "-c", "xz -9ez --check=crc32 --keep payload.foilz" });
+    // const compress_cmd = builder.addSystemCommand(&[_][]const u8{ "/bin/sh", "-c", "gzip -9nf payload.foilz" });
+    const compress_cmd = builder.addSystemCommand(&[_][]const u8{ "/bin/sh", "-c", "xz -9ez --check=crc32 --keep payload.foilz" });
     try compress_cmd.step.make();
 }
 
