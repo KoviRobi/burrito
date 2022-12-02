@@ -27,7 +27,7 @@ pub fn launch(install_dir: []const u8, env_map: *BufMap, meta: *const MetaStruct
     const release_cookie_path = try fs.path.join(allocator, &[_][]const u8{ install_dir, "releases", "COOKIE" });
     const release_lib_path = try fs.path.join(allocator, &[_][]const u8{ install_dir, "lib" });
     const install_vm_args_path = try fs.path.join(allocator, &[_][]const u8{ install_dir, "releases", meta.app_version, "vm.args" });
-    const config_sys_path = try fs.path.join(allocator, &[_][]const u8{ install_dir, "releases", meta.app_version, "sys.config" });
+    const config_sys_path = try fs.path.join(allocator, &[_][]const u8{ install_dir, "releases", meta.app_version, "sys" });
     const rel_vsn_dir = try fs.path.join(allocator, &[_][]const u8{ install_dir, "releases", meta.app_version });
     const boot_path = try fs.path.join(allocator, &[_][]const u8{ rel_vsn_dir, "start" });
 
@@ -39,6 +39,8 @@ pub fn launch(install_dir: []const u8, env_map: *BufMap, meta: *const MetaStruct
     const release_cookie_content = try release_cookie_file.readToEndAlloc(allocator, MAX_READ_SIZE);
 
     // Set all the required release arguments
+    try env_map.put("RELEASE_ROOT", install_dir);
+    try env_map.put("RELEASE_SYS_CONFIG", config_sys_path);
 
     const erlang_cli = &[_][]const u8{
         erl_bin_path[0..], 
