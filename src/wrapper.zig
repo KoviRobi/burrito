@@ -95,7 +95,7 @@ pub fn main() anyerror!void {
     }
 
     // Trim args to only what we actually want to pass to erlang
-    const args_trimmed = args.?[1..];
+    var args_trimmed = args.?[1..];
     log.debug("Passing args string: {s}", .{args_trimmed});
 
     // Execute plugin code
@@ -124,6 +124,13 @@ pub fn main() anyerror!void {
         return;
     }
 
+    // Check for windows werl
+    var werl = false;
+    if (args_trimmed.len > 0 and std.mem.eql(u8, args_trimmed[0], "werl")) {
+        werl = true;
+        args_trimmed = args.?[2..];
+    }
+
     // Clean up older versions
     const base_install_path = try get_base_install_dir();
     try maint.do_clean_old_versions(base_install_path, install_dir);
@@ -140,7 +147,7 @@ pub fn main() anyerror!void {
 
     log.debug("Launching erlang...", .{});
 
-    try launcher.launch(install_dir, &env_map, &meta, args_trimmed);
+    try launcher.launch(install_dir, &env_map, &meta, args_trimmed, werl);
 }
 
 fn do_payload_install(install_dir: []const u8, metadata_path: []const u8) !void {
