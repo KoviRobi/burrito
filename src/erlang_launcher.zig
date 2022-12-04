@@ -41,6 +41,7 @@ pub fn launch(install_dir: []const u8, env_map: *BufMap, meta: *const MetaStruct
     const release_cookie_content = try release_cookie_file.readToEndAlloc(allocator, MAX_READ_SIZE);
 
     // Set all the required release arguments
+    try env_map.put("ERL_ROOTDIR", install_dir);
     try env_map.put("RELEASE_ROOT", install_dir);
     try env_map.put("RELEASE_SYS_CONFIG", config_sys_path);
 
