@@ -69,7 +69,8 @@ defmodule Burrito.Builder.Target do
 
     # translate the custom_erts (or lack of one) in a source to be resolved later
     cross_build = is_cross_build?(fields, libc)
-    erts_source = translate_erts_source(custom_erts, cross_build)
+    is_windows = fields[:os] == :windows or elem(:os.type(), 0) == :win32
+    erts_source = translate_erts_source(custom_erts, cross_build, is_windows)
 
     fields =
       fields
@@ -82,13 +83,16 @@ defmodule Burrito.Builder.Target do
     struct!(__MODULE__, fields)
   end
 
-  defp translate_erts_source(custom_location, cross_build?) do
+  defp translate_erts_source(custom_location, cross_build?, windows?) do
     if custom_location do
       cond do
         is_uri?(custom_location) ->
           {:url, url: custom_location}
 
         String.ends_with?(custom_location, ".tar.gz") ->
+          {:local, path: custom_location}
+
+        String.ends_with?(custom_location, ".exe") and windows? ->
           {:local, path: custom_location}
 
         File.dir?(custom_location) ->
