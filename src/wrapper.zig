@@ -124,10 +124,10 @@ pub fn main() anyerror!void {
         return;
     }
 
-    // Check for windows werl
-    var werl = false;
-    if (args_trimmed.len > 0 and std.mem.eql(u8, args_trimmed[0], "werl")) {
-        werl = true;
+    // Check for starting IEx
+    var iex = false;
+    if (args_trimmed.len > 0 and std.mem.eql(u8, args_trimmed[0], "iex")) {
+        iex = true;
         args_trimmed = args.?[2..];
     }
 
@@ -147,7 +147,7 @@ pub fn main() anyerror!void {
 
     log.debug("Launching erlang...", .{});
 
-    try launcher.launch(install_dir, &env_map, &meta, args_trimmed, werl);
+    try launcher.launch(install_dir, &env_map, &meta, args_trimmed, iex);
 }
 
 fn do_payload_install(install_dir: []const u8, metadata_path: []const u8) !void {

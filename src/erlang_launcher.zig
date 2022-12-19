@@ -11,8 +11,8 @@ const BufMap = std.BufMap;
 
 const MAX_READ_SIZE = 256;
 
-fn get_erl_exe_name(werl: bool) []const u8 {
-    if (builtin.os.tag == .windows and werl) {
+fn get_erl_exe_name(iex: bool) []const u8 {
+    if (builtin.os.tag == .windows and iex) {
         return "werl.exe";
     } else if (builtin.os.tag == .windows) {
         return "erl.exe";
@@ -21,7 +21,7 @@ fn get_erl_exe_name(werl: bool) []const u8 {
     }
 }
 
-pub fn launch(install_dir: []const u8, env_map: *BufMap, meta: *const MetaStruct, args_trimmed: []const []const u8, werl: bool) !void {
+pub fn launch(install_dir: []const u8, env_map: *BufMap, meta: *const MetaStruct, args_trimmed: []const []const u8, iex: bool) !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     var allocator = arena.allocator();
 
@@ -34,7 +34,7 @@ pub fn launch(install_dir: []const u8, env_map: *BufMap, meta: *const MetaStruct
     const boot_path = try fs.path.join(allocator, &[_][]const u8{ rel_vsn_dir, "start" });
 
     const erts_version_name = try std.fmt.allocPrint(allocator, "erts-{s}", .{meta.erts_version});
-    var erl_bin_path = try fs.path.join(allocator, &[_][]const u8{ install_dir, erts_version_name, "bin", get_erl_exe_name(werl) });
+    var erl_bin_path = try fs.path.join(allocator, &[_][]const u8{ install_dir, erts_version_name, "bin", get_erl_exe_name(iex) });
 
     // Read the Erlang COOKIE file for the release
     const release_cookie_file = try fs.openFileAbsolute(release_cookie_path, .{ .read = true, .write = false });
@@ -45,7 +45,32 @@ pub fn launch(install_dir: []const u8, env_map: *BufMap, meta: *const MetaStruct
     try env_map.put("RELEASE_ROOT", install_dir);
     try env_map.put("RELEASE_SYS_CONFIG", config_sys_path);
 
-    const erlang_cli = &[_][]const u8{
+    const erlang_cli = if (iex) &[_][]const u8{
+        erl_bin_path[0..],
+        "-kernel",
+        "shell_history",
+        "enabled",
+        "-elixir ansi_enabled true",
+        "-noshell",
+        "-s elixir start_cli",
+        "-mode embedded",
+        "-setcookie",
+        release_cookie_content,
+        "-boot",
+        boot_path,
+        "-boot_var",
+        "RELEASE_LIB",
+        release_lib_path,
+        "-args_file",
+        install_vm_args_path,
+        "-config",
+        config_sys_path,
+        "-user",
+        "Elixir.IEx.CLI",
+        "-extra",
+        "--no-halt",
+        "+iex",
+    } else &[_][]const u8{
         erl_bin_path[0..],
         "-elixir ansi_enabled true",
         "-noshell",
@@ -62,12 +87,13 @@ pub fn launch(install_dir: []const u8, env_map: *BufMap, meta: *const MetaStruct
         install_vm_args_path,
         "-config",
         config_sys_path,
+        "-extra"
     };
 
     if (builtin.os.tag == .windows) {
         // Fix up Windows 10+ consoles having ANSI escape support, but only if we set some flags
         win_asni.enable_virtual_term();
-        const final_args = try std.mem.concat(allocator, []const u8, &.{ erlang_cli,  args_trimmed });
+        const final_args = try std.mem.concat(allocator, []const u8, &.{ erlang_cli, args_trimmed });
 
         const win_child_proc = try std.ChildProcess.init(final_args, allocator);
         win_child_proc.env_map = env_map;
