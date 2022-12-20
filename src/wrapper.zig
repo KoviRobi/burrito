@@ -22,7 +22,7 @@ const maint = @import("maintenance.zig");
 const shutil = @import("shutil.zig");
 
 // Install dir suffix
-const install_suffix = ".burrito";
+const install_suffix = "burrito";
 
 const plugin = @import("burrito_plugin");
 
